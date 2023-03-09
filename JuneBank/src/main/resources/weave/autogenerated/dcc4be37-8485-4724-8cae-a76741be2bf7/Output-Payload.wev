@@ -1,0 +1,26 @@
+%dw 2.0
+
+type auto_dcc4be37_8485_4724_8cae_a76741be2bf7_Output_Payload = {
+  interestRate?: Number, 
+  accountID: String, 
+  createdAt: String, 
+  bank: {
+    bankCode: String, 
+    routingNumber?: String, 
+    swiftBIC?: String, 
+    bankName: String, 
+    _?: Any
+  }, 
+  IBAN: String, 
+  modifiedAt?: String, 
+  accountType: "Credit Card" | "Savings" | "Overdraft Savings" | "Checking", 
+  accountOwner: Array<{    displayName: String,     customerID: String,     ssn: String,     _?: Any  }>, 
+  accountNumber: String, 
+  accountBalance: {
+    amount: String, 
+    currency: String, 
+    _?: Any
+  }, 
+  _?: Any
+}
+

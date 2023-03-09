@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="69a525fd-1e4e-477a-9a5c-af246cc80130" >
+		<jms:active-mq-connection username="admin" password="admin" >
+			<jms:factory-configuration brokerUrl="tcp://localhost:61616"/>
+		</jms:active-mq-connection>
+	</jms:config>
+	<flow name="TransactionPOST" doc:id="339a9e12-a0e6-41e5-9215-e81bdc273d89" >
+		<logger level="INFO" doc:name="Logger" doc:id="a7221277-6a41-4835-9a85-cc70a2ebf11b" message="#[payload]"/>
+		<jms:publish doc:id="87b713a1-cb37-4dcd-baee-cb63bbd4b855" destination="2generatedreport" config-ref="JMS_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="743e3e82-b0ab-4f41-b58a-56c1f95a3a65" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "The Que Message has been published."
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

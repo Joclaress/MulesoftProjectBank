@@ -1,0 +1,19 @@
+{
+  "sampleData": {
+    "4ac07d59-8dce-4350-9583-aabf89480e8d": {
+      "payload": "sample_data/json.json"
+    },
+    "11b64d17-b2b7-44e1-bac6-1b83475387d4": {
+      "payload": "sample_data/json_2.json"
+    },
+    "67de635c-cd04-451c-87b5-cf6fdef69095": {
+      "payload": "sample_data/json_1.json"
+    },
+    "37e503e7-465c-4d35-9d7f-49070fb60a35": {
+      "payload": "sample_data/list_java.dwl"
+    },
+    "730cc30b-a8f2-4c02-a5b6-81f392ed3067": {
+      "payload": "sample_data/list_java_1.dwl"
+    }
+  }
+}

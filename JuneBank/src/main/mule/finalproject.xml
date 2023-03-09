@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <http:listener-config name="finalproject-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="finalproject-config" api="finalproject.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="finalproject-main">
+        <http:listener config-ref="finalproject-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:body><![CDATA[#[%dw 2.0
+output application/json
+---
+payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="finalproject-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="finalproject-console">
+        <http:listener config-ref="finalproject-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="finalproject-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\accounts\(account_id):application\json:finalproject-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="account_id">attributes.uriParams.'account_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="put:\accounts\(account_id):application\json:finalproject-config" />
+    </flow>
+    <flow name="patch:\customers\(customer_id):application\json:finalproject-config">
+        <flow-ref doc:name="Flow Reference" doc:id="9e69e765-e44d-41fb-aa46-303391c994c1" name="CustomerSELECTID" />
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="customer_id">attributes.uriParams.'customer_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerID: "1fe1c22s-3d3a-9n3v",
+  firstName: "Molly",
+  lastName: "Mule",
+  displayName: "Molly the Mule",
+  address: {
+    addressLine1: "123 Street",
+    addressLine2: "Apt.#3D",
+    city: "San Francisco",
+    state: "California",
+    zipCode: "94110",
+    country: "United States"
+  },
+  phone: "415-000-0000",
+  email: "molly@mulesoft.com",
+  ssn: "321-654-0987",
+  dateOfBirth: "1990-09-04"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="delete:\customers\(customer_id):finalproject-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="customer_id">attributes.uriParams.'customer_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerID: "1fe1c22s-3d3a-9n3v",
+  firstName: "Molly",
+  lastName: "Mule",
+  displayName: "Molly the Mule",
+  address: {
+    addressLine1: "123 Street",
+    addressLine2: "Apt.#3D",
+    city: "San Francisco",
+    state: "California",
+    zipCode: "94110",
+    country: "United States"
+  },
+  phone: "415-000-0000",
+  email: "molly@mulesoft.com",
+  ssn: "321-654-0987",
+  dateOfBirth: "1990-09-04"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+	<flow name="patch:\customers:finalproject-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerID: "1fe1c22s-3d3a-9n3v",
+  firstName: "Molly",
+  lastName: "Mule",
+  displayName: "Molly the Mule",
+  address: {
+    addressLine1: "123 Street",
+    addressLine2: "Apt.#3D",
+    city: "San Francisco",
+    state: "California",
+    zipCode: "94110",
+    country: "United States"
+  },
+  phone: "415-000-0000",
+  email: "molly@mulesoft.com",
+  ssn: "321-654-0987",
+  dateOfBirth: "1990-09-04"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="a99453cc-8c82-4b93-85a5-749ef43d1893" name="CustomerUpdate" />
+    </flow>
+    <flow name="get:\accounts:finalproject-config">
+        <logger level="INFO" doc:name="Logger" doc:id="87d73119-a6b6-4821-a0c1-752a6458a826" message="#[payload]" />
+        <flow-ref doc:name="Flow Reference" doc:id="b359d6c1-d967-40aa-b1f2-dec0358c7671" name="AccountGET" />
+        <logger level="INFO" message="get:\accounts:finalproject-config" />
+    </flow>
+    <flow name="get:\transactions:finalproject-config">
+        <flow-ref doc:name="Flow Reference" doc:id="c6ce4383-41bd-4992-8882-91a366591f25" name="TransactionGET"/>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  transactionID: "b05f550d-1915-4def",
+  fromAccount: {
+    accountID: "12345",
+    accountType: "Savings",
+    accountNumber: "1234567890",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    accountBalance: {
+      currency: "USD",
+      amount: "8457.90"
+    },
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  toAccount: {
+    accountID: "56437",
+    accountType: "Credit Card",
+    accountNumber: "4321987650",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    accountBalance: {
+      currency: "USD",
+      amount: "698.00"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  transactionType: "online",
+  transactionAmount: {
+    currency: "USD",
+    amount: "70.00"
+  },
+  newAccountBalance: {
+    currency: "USD",
+    amount: "8387.90"
+  },
+  postedAt: "2012-06-07T00:00:00.001Z"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\accounts\(account_id)\transactions:finalproject-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="account_id">attributes.uriParams.'account_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  transactionID: "b05f550d-1915-4def",
+  fromAccount: {
+    accountID: "12345",
+    accountType: "Savings",
+    accountNumber: "1234567890",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    accountBalance: {
+      currency: "USD",
+      amount: "8457.90"
+    },
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  toAccount: {
+    accountID: "56437",
+    accountType: "Credit Card",
+    accountNumber: "4321987650",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    accountBalance: {
+      currency: "USD",
+      amount: "698.00"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  transactionType: "online",
+  transactionAmount: {
+    currency: "USD",
+    amount: "70.00"
+  },
+  newAccountBalance: {
+    currency: "USD",
+    amount: "8387.90"
+  },
+  postedAt: "2012-06-07T00:00:00.001Z"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\accounts\(account_id):application\json:finalproject-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="account_id">attributes.uriParams.'account_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  accountID: "12345",
+  accountType: "Savings",
+  accountNumber: "1234567890",
+  accountOwner: [
+    {
+      customerID: "8f19cb50-3f57-4d38",
+      displayName: "John Doe",
+      ssn: "123-456-7890"
+    }
+  ],
+  accountBalance: {
+    currency: "USD",
+    amount: "8457.90"
+  },
+  IBAN: "GB29NWBK60161331926820",
+  bank: {
+    bankCode: "NWBKGB2L",
+    bankName: "June Bank",
+    routingNumber: "432159876"
+  },
+  createdAt: "2012-03-07T00:00:00.001Z"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="e9a40811-258a-4d8c-a932-af6efe00b3ef" name="AccountIDGET" />
+    </flow>
+    <flow name="get:\customers\(customer_id):finalproject-config">
+        <flow-ref doc:name="Flow Reference" doc:id="28b67474-57e2-4906-be0c-4979d34f1a7e" name="CustomerSELECTID" />
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="customer_id">attributes.uriParams.'customer_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerID: "1fe1c22s-3d3a-9n3v",
+  firstName: "Molly",
+  lastName: "Mule",
+  displayName: "Molly the Mule",
+  address: {
+    addressLine1: "123 Street",
+    addressLine2: "Apt.#3D",
+    city: "San Francisco",
+    state: "California",
+    zipCode: "94110",
+    country: "United States"
+  },
+  phone: "415-000-0000",
+  email: "molly@mulesoft.com",
+  ssn: "321-654-0987",
+  dateOfBirth: "1990-09-04"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\transactions\(transaction_id):application\json:finalproject-config">
+		<ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="transaction_id">attributes.uriParams.'transaction_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  transactionID: "b05f550d-1915-4def",
+  fromAccount: {
+    accountID: "12345",
+    accountType: "Savings",
+    accountNumber: "1234567890",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    accountBalance: {
+      currency: "USD",
+      amount: "8457.90"
+    },
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  toAccount: {
+    accountID: "56437",
+    accountType: "Credit Card",
+    accountNumber: "4321987650",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    accountBalance: {
+      currency: "USD",
+      amount: "698.00"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  transactionType: "online",
+  transactionAmount: {
+    currency: "USD",
+    amount: "70.00"
+  },
+  newAccountBalance: {
+    currency: "USD",
+    amount: "8387.90"
+  },
+  postedAt: "2012-06-07T00:00:00.001Z"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\customers:finalproject-config">
+        <logger level="INFO" message="get:\customers:finalproject-config" />
+        <flow-ref doc:name="Flow Reference" doc:id="73a9a9f1-59f1-409c-8e7a-b43d21df4506" name="CustomerAll" />
+        <logger level="INFO" doc:name="Logger" doc:id="7e488fcc-d834-4e5d-a9eb-bee0d969b99f" message="#[payload]" />
+    </flow>
+    <flow name="post:\accounts:application\json:finalproject-config">
+        <flow-ref doc:name="Flow Reference" doc:id="224899c1-4b26-4779-b4fe-19b3c83f4575" name="AccountADD" />
+    </flow>
+    <flow name="post:\transactions:application\json:finalproject-config">
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  transactionID: "b05f550d-1915-4def",
+  fromAccount: {
+    accountID: "12345",
+    accountType: "Savings",
+    accountNumber: "1234567890",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    accountBalance: {
+      currency: "USD",
+      amount: "8457.90"
+    },
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  toAccount: {
+    accountID: "56437",
+    accountType: "Credit Card",
+    accountNumber: "4321987650",
+    accountOwner: [
+      {
+        customerID: "8f19cb50-3f57-4d38",
+        displayName: "John Doe",
+        ssn: "123-456-7890"
+      }
+    ],
+    IBAN: "GB29NWBK60161331926820",
+    bank: {
+      bankCode: "NWBKGB2L",
+      bankName: "ACME Bank",
+      routingNumber: "432159876"
+    },
+    accountBalance: {
+      currency: "USD",
+      amount: "698.00"
+    },
+    createdAt: "2012-03-07T00:00:00.001Z"
+  },
+  transactionType: "online",
+  transactionAmount: {
+    currency: "USD",
+    amount: "70.00"
+  },
+  newAccountBalance: {
+    currency: "USD",
+    amount: "8387.90"
+  },
+  postedAt: "2012-06-07T00:00:00.001Z"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\customers:application\json:finalproject-config">
+        <flow-ref doc:name="Flow Reference" doc:id="8742b17f-3031-4406-9167-420c46c948af" name="CustomerPOST" />
+        <logger level="INFO" doc:name="Logger" doc:id="9c9f2401-cb59-4239-9c88-5099ee2b0eed" message="#[payload]" />
+    </flow>
+</mule>

@@ -1,0 +1,24 @@
+%dw 2.0
+
+type auto_88c3a3b2_f775_4c73_b2ff_57d53536c744_Output_Payload = {
+  firstName: String, 
+  lastName: String, 
+  address: {
+    zipCode: String, 
+    country: String, 
+    city: String, 
+    addressLine1: String, 
+    addressLine2?: String, 
+    state: String, 
+    _?: Any
+  }, 
+  phone: String, 
+  prefix?: String, 
+  customerID: String, 
+  dateOfBirth: String, 
+  suffix?: String, 
+  email: String, 
+  ssn: String, 
+  _?: Any
+}
+

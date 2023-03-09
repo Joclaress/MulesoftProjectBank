@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="000961d7-cfde-457b-9ad2-c6dd7dc1bdd2" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="uat-crm-2023" />
+	</db:config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="1e7328db-fc12-4925-bf44-6db1e4ce9bc4" >
+		<jms:active-mq-connection username="admin" password="dmin" >
+			<jms:factory-configuration brokerUrl="tcp://DESKTOP-F8V312A:61616"/>
+		</jms:active-mq-connection>
+	</jms:config>
+	<ftp:config name="FTP_Config" doc:name="FTP Config" doc:id="8f9ee940-1b8e-46cb-9b54-e8adb835e50f" >
+		<ftp:connection host="localhost" username="user" password="jericho123" />
+	</ftp:config>
+	<flow name="CustomerPOST" doc:id="349799ae-6f7c-42b9-8eea-c8e74c5f9578" >
+		<logger level="INFO" doc:name="##CUSTOMER POST START" doc:id="1903343c-50aa-4f63-90c2-0ad5b14b673f" message="##CUSTOMER POST START"/>
+		<first-successful doc:name="First Successful" doc:id="738f8d1a-1504-4ba7-a9c4-9b15f4391b39" >
+			<route >
+				<db:insert doc:name="Insert" doc:id="5db150f3-ef0c-4553-bb65-79b4b1083475" config-ref="Database_Config">
+			<db:sql><![CDATA[INSERT INTO customer (customerID, firstName, lastName, addressLine1, addressLine2, city, state, zipCode, country, phone, email, ssn, dateOfBirth)
+VALUES  (:customerID, :firstName, :lastName, :addressLine1, :addressLine2, :city, :state, :zipCode, :country, :phone, :email, :ssn, :dateOfBirth)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	 customerID: payload.customerID, 
+	 firstName:payload.firstNames, 
+	 lastName:payload.lastName, 
+	 addressLine1:payload.address.addressLine1, 
+	 addressLine2:payload.address.addressLine2, 
+	 city:payload.address.city, 
+	 state: payload.address.state, 
+	 zipCode:payload.address.zipCode, 
+	 country:payload.address.country, 
+	 phone: payload.phone, 
+	 email: payload.email,
+	 ssn: payload.ssn,
+	 dateOfBirth: payload.dateOfBirth
+}]]]></db:input-parameters>
+		</db:insert>
+				<raise-error doc:name="Raise error" doc:id="bc42ce25-dd3a-4394-a13f-ce855cc3d3c1" type="PRECONDITION:NOTINSERT"/>
+			</route>
+			<route >
+				<db:insert doc:name="2nd Insert" doc:id="045253cf-c3a9-4dff-b937-8040b22264b5" config-ref="Database_Config">
+					<db:sql><![CDATA[INSERT INTO customer (customerID, firstName, lastName, addressLine1, addressLine2, city, state, zipCode, country, phone, email, ssn, dateOfBirth)
+VALUES  (:customerID, :firstName, :lastName, :addressLine1, :addressLine2, :city, :state, :zipCode, :country, :phone, :email, :ssn, :dateOfBirth)]]></db:sql>
+					<db:input-parameters><![CDATA[#[{
+	 customerID: payload.customerID, 
+	 firstName:payload.firstName, 
+	 lastName:payload.lastName, 
+	 addressLine1:payload.address.addressLine1, 
+	 addressLine2:payload.address.addressLine2, 
+	 city:payload.address.city, 
+	 state: payload.address.state, 
+	 zipCode:payload.address.zipCode, 
+	 country:payload.address.country, 
+	 phone: payload.phone, 
+	 email: payload.email,
+	 ssn: payload.ssn,
+	 dateOfBirth: payload.dateOfBirth
+}]]]></db:input-parameters>
+				</db:insert>
+				<flow-ref doc:name="Flow Reference" doc:id="33b1a5eb-bacc-4db4-af15-31d0448cc73b" name="2ndTimeInsert"/>
+			</route>
+		</first-successful>
+		<ee:transform doc:name="Transform Message" doc:id="67de635c-cd04-451c-87b5-cf6fdef69095" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="##CUSTOMERPOST END" doc:id="7215bf23-7a19-4462-bd85-111ca3e8bd04" message="##CUSTOMERPOST END" />
+	</flow>
+	<flow name="2ndTimeInsert" doc:id="e5866254-78f5-4b18-989e-02cefb6dd8f1" >
+		<db:insert doc:name="Insert" doc:id="9d1b304d-7bb6-4cb8-a213-c30d46c7054e" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO customer (customerID, firstName, lastName, addressLine1, addressLine2, city, state, zipCode, country, phone, email, ssn, dateOfBirth)
+VALUES  (:customerID, :firstName, :lastName, :addressLine1, :addressLine2, :city, :state, :zipCode, :country, :phone, :email, :ssn, :dateOfBirth)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	 customerID: payload.customerID, 
+	 firstName:payload.firstName, 
+	 lastName:payload.lastName, 
+	 addressLine1:payload.address.addressLine1, 
+	 addressLine2:payload.address.addressLine2, 
+	 city:payload.address.city, 
+	 state: payload.address.state, 
+	 zipCode:payload.address.zipCode, 
+	 country:payload.address.country, 
+	 phone: payload.phone, 
+	 email: payload.email,
+	 ssn: payload.ssn,
+	 dateOfBirth: payload.dateOfBirth
+}]]]></db:input-parameters>
+		</db:insert>
+	</flow>
+	<flow name="CustomerAll" doc:id="280f3612-e289-4f5f-9d99-017a23c62944" >
+		<logger level="INFO" doc:name="##CUSTOMER ALL END" doc:id="b23fab9d-35ca-43a8-96c6-4f6688b87f61" message="##CUSTOMER ALL END"/>
+		<choice doc:name="Choice" doc:id="256c8307-f678-4555-9506-404051a621bf" >
+			<when expression="#[attributes.method != 'GET']">
+				<flow-ref doc:name="Flow Reference" doc:id="b3d02bf2-2040-4a6d-a596-9068ae75afd6" name="customerFlow"/>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="Flow Reference" doc:id="3ba8dad9-dcf1-4dd2-8469-fbe85a571914" name="customerFlow"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="37e503e7-465c-4d35-9d7f-49070fb60a35" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var outputs = payload map {
+	customerID: $.customerID,
+	fristName: $.firstName,
+	lastName: $.lastName,
+	address:{
+		addressLine1: $.addressLine1,
+		addressLine2: $.addressLine2,
+		city: $.city,
+		state: $.state,
+		zipCode: $.zipCode,
+		country: $.country
+	},
+	phone: $.phone,
+	email: $.email,
+	ssn: $.ssn,
+	dateOfBirth: $.dateOfBirth
+}
+---
+{	
+	(outputs)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="aafdad79-17d8-4697-b812-834df5bef697" message="#[payload]" />
+		<logger level="INFO" doc:name="##CUSTOMER ALL END" doc:id="da6d21df-59c9-49d8-b568-3a17d253397a" message="##CUSTOMER ALL END"/>
+	</flow>
+	<flow name="customerFlow" doc:id="905f756c-4a25-4cd8-8b61-1e4a316065ea" >
+		<db:select doc:name="Select" doc:id="9c2596e9-9894-4e3b-92f6-ab5823bd47a4" config-ref="Database_Config" >
+			<db:sql ><![CDATA[SELECT * FROM customer]]></db:sql>
+		</db:select>
+	</flow>
+	<flow name="CustomerUpdate" doc:id="88c3a3b2-f775-4c73-b2ff-57d53536c744" >
+		<logger level="INFO" doc:name="##CUSTOMER UPDATE START" doc:id="c87d9b05-b97c-4157-b5c9-50b63572f253" message="##CUSTOMER UPDATE START"/>
+		<db:update doc:name="Update" doc:id="b2f2ec30-785d-42ef-8a41-7e1b73818263" config-ref="Database_Config">
+			<db:sql ><![CDATA[UPDATE customers SET customerID = :customerID, firstName = :firstName, lastName = :lastName, addressLine1 = :addressLine1, addressLine2 = :addressLine2, city = :city, state = :state, zipCode = :zipCode, country = :country, phone = :phone, email = :email, ssn = :ssn, dateOfBirth = :dateOfBirth
+]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'customerID': payload.customerID, 
+	 'firstName':payload.firstName, 
+	 'lastName':payload.lastName, 
+	 'addressLine1':payload.address.addressLine1, 
+	 'addressLine2':payload.address.addressLine2, 
+	 'city':payload.address.city, 
+	 'state': payload.address.state, 
+	 'zipCode':payload.address.zipCode, 
+	 'country':payload.address.country, 
+	 'phone': payload.phone, 
+	 'email': payload.email,
+	 'ssn': payload.ssn,
+	 'dateOfBirth': payload.dateOfBirth as Date
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="f851b84a-dccf-4d3d-a3a3-b554d89d8c56" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="##CUSTOMER UPDATE END" doc:id="7c6e05ae-ad06-4ade-b557-a4d51feac148" message="##CUSTOMER UPDATE END" />
+	</flow>
+	<flow name="CustomerSELECTID" doc:id="3c0bc47c-27d5-4063-989c-f0afc3cf17ac">
+		<logger level="INFO" doc:name="##CUSTOMERSELECTID START" doc:id="263edb33-5e81-435e-b39c-3156ed0e5fea" message="##CUSTOMERSELECTID START"/>
+		<validation:is-number numberType="INTEGER" doc:id="07480d4b-e67e-4b17-8d79-32b9b3b32463" value="#[attributes.queryParams.id]" />
+		<db:select doc:name="Select" doc:id="9e5bcf06-202f-4143-8d34-5c273f62cda1" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT customerID, firstName, lastName, addressLine1, addressLine2, city, state, zipCode, country, phone, email, ssn, dateOfBirth FROM customer where customerID = :customerID]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	customerID: attributes.queryParams.id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="f72a9ab3-c8a3-4186-8b13-112ba3e57b19">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var outputs = payload map {
+	customerID: $.customerID,
+	fristName: $.firstName,
+	lastName: $.lastName,
+	address:{
+		addressLine1: $.addressLine1,
+		addressLine2: $.addressLine2,
+		city: $.city,
+		state: $.state,
+		zipCode: $.zipCode,
+		country: $.country
+	},
+	phone: $.phone,
+	email: $.email,
+	ssn: $.ssn,
+	dateOfBirth: $.dateOfBirth
+}
+---
+{	
+	(outputs)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="##CUSTOMERSELECTID END" doc:id="5c98f3d8-7e60-4a5c-ad0e-37b825f11cd0" message="##CUSTOMERSELECTID END"/>
+	</flow>
+	<flow name="CustomerIdUpdate" doc:id="0c815514-a13f-4717-aa9c-342d0951ddf7">
+		<logger level="INFO" doc:name="##CUSTOMERIDUPDATE LOGGER START" doc:id="869bd6ca-6d41-4341-8138-7d491d44325e" message="##CUSTOMERIDUPDATE LOGGER START"/>
+		<db:update doc:name="Update" doc:id="400130e3-f48d-4381-a55b-62e07ead8b1c" config-ref="Database_Config">
+			<db:sql><![CDATA[UPDATE customers SET customerID = :customerID, firstName = :firstName, lastName = :lastName, addressLine1 = :addressLine1, addressLine2 = :addressLine2, city = :city, state = :state, zipCode = :zipCode, country = :country, phone = :phone, email = :email, ssn = :ssn, dateOfBirth = :dateOfBirth
+]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	customerID: attributes.uriParams.id
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="6c5db7e3-09b8-4e32-889c-8975c23bb722">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	 'customerID': payload.customerID, 
+	 'firstName':payload.firstName, 
+	 'lastName':payload.lastName, 
+	 'addressLine1':payload.address.addressLine1, 
+	 'addressLine2':payload.address.addressLine2, 
+	 'city':payload.address.city, 
+	 'state': payload.address.state, 
+	 'zipCode':payload.address.zipCode, 
+	 'country':payload.address.country, 
+	 'phone': payload.phone, 
+	 'email': payload.email,
+	 'ssn': payload.ssn,
+	 'dateOfBirth': payload.createdAt 
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="##CUSTOMERIDUPDATE LOGGER END" doc:id="e6f54dcc-f5de-4ffd-b966-2dca3f0295fb" message="##CUSTOMERIDUPDATE LOGGER END"/>
+	</flow>
+	<flow name="AccountADD" doc:id="06e2b179-23cd-4380-b360-099051017fa7">
+		<logger level="INFO" doc:name="## ACCOUNT LOGGER ADD START" doc:id="64ee97c4-db9b-4bb1-a31e-13443c7ba414" message="## ACCOUNT LOGGER ADD START"/>
+		<db:insert doc:name="Insert" doc:id="6a73c021-3158-425a-b1c7-45d60916734e" config-ref="Database_Config">
+			<db:sql><![CDATA[INSERT INTO account (accountID,accntType, accountNumber,customerId, displayName, ssn, IBAN, currency, amount, bankCode, bankName, routingNumber, createdAt)
+VALUES (:accountID, :accntType, :accountNumber, :customerId, :displayName, :ssn, :IBAN, :currency, :amount, :bankCode, :bankName, :routingNumber, :createdAt)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	accountID:payload.acccountID,
+	accntType:payload.accntType, 
+	accountNumber: payload.accountNumber,
+	customerId: payload.accountOwner.customerId,
+	displayName: payload.accountOwner.displayName,
+	ssn: payload.accountOwner.ssn,
+	IBAN: payload.IBAN,
+	currency: payload.accountBalance.currency, 
+	amount: payload.accountBalance.amount, 
+	bankCode: payload.bank.bankCode, 
+	bankName: payload.bank.bankName, 
+	routingNumber: payload.bank.routingNumber,
+	createdAt: payload.createdAt as Date
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="e8c83817-0ced-4227-9498-5a6541621ba4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="## ACCOUNT LOGGER ADD START" doc:id="8e492f8f-7200-40c2-a77f-66dde4420160" message="#[payload]" />
+	</flow>
+	<flow name="AccountGET" doc:id="7ae79e6a-2be9-455f-b2c2-7673ff5be28a">
+		<logger level="INFO" doc:name="##ACCOUNT LOGGER GET ALL START" doc:id="4b2ae91a-85b5-4318-a00f-f2e3c1b29323" message="##ACCOUNT LOGGER GET ALL START"/>
+		<db:select doc:name="Select" doc:id="dd2900d2-960f-4ddb-88c1-0aa61997f3a5" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM account]]></db:sql>
+		</db:select>
+		<batch:job jobName="implementationBatch_Job" doc:id="2252a4e0-e6b5-47f1-8203-f15564cf7bda">
+			<batch:process-records>
+				<batch:step name="Batch_Step" doc:id="e08a5dc7-ddfb-48e3-aac5-e03b333cf7ce">
+					<set-payload value="#[payload * 10]" doc:name="payload * 10" doc:id="5c42c4db-26e8-42de-aa81-b39d3a2ee01f" />
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="caeffc9b-0e15-4bcd-a3c2-5d0a3c4d662a" size="2">
+						<logger level="INFO" doc:name="Logger" doc:id="f6465621-6dfd-496b-a2a4-f54c8346c7fa" message='#["Batch step 1 values are ::" + payload]' />
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete>
+				<logger level="INFO" doc:name="Logger" doc:id="25654512-25c3-4851-b84b-747e30e16b2e" message="#[payload]" />
+			</batch:on-complete>
+		</batch:job>
+		<ee:transform doc:name="Transform Message" doc:id="730cc30b-a8f2-4c02-a5b6-81f392ed3067">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var accounts = payload map{
+	accountID: $.accountID,
+	accountType: $.accntType,
+	accountNumber: $.accountNumber,
+	accountowner:{
+		cusomerID: $.customerID,
+		displayName: $.displayName,
+		ssn: $.ssn
+	},
+	accountBalance:{
+		currency: $.currency,
+		amount: $.amount,
+		
+	},
+	IBAN: $.IBAN,
+	bank:{
+	bankCode: $.bankCode,
+	bankName: $.bankName
+	},
+	loan: $.loan,
+	parentLeads: $.parentLeads,
+	role: $.role,
+	createdat: $.createdAt
+	
+}
+---
+{
+	(accounts)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="##ACCOUNT LOGGER GET ALL END" doc:id="25bbef84-ff35-4a52-be84-0dfa61835ae4" message="##ACCOUNT LOGGER GET ALL END" />
+	</flow>
+	<flow name="AccountIDGET" doc:id="dcc4be37-8485-4724-8cae-a76741be2bf7" >
+		<logger level="INFO" doc:name="## ACCOUNT LOGGER ID GET START" doc:id="2c40e660-288d-48a6-9b4f-a2e3de385e5b" message="##ACCOUNT LOGGER ID GET START"/>
+		<validation:is-number numberType="INTEGER" doc:name="Is number" doc:id="33d69016-7588-4370-96f9-4d0fdb162523" value="attributes.uriParams.id" />
+		<db:select doc:name="Select" doc:id="31f0b1c1-009a-499e-9fac-cad0140f4278" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT accountID,accntType, accountNumber,customerId, displayName, ssn, IBAN, currency, amount, bankCode, bankName, routingNumber FROM customer  WHERE accountID = :accountID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	accountID:attributes.uriParams.id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="7c2e26e4-ef16-420d-b828-b8d4ed9a5272">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var accounts = payload map{
+	accntType:$.accntType, 
+	accountNumber: $.accountNumber,
+	accountOwner:{
+	customerId: $.accountOwner.customerId,
+	displayName: $.accountOwner.displayName,
+	ssn: $.accountOwner.ssn
+	},
+	accountBalance:{
+	currency: $.accountBalance.currency, 
+	amount: $.accountBalance.amount
+	},
+	IBAN: $.IBAN,
+	bank:{
+	bankCode: $.bank.bankCode, 
+	bankName: $.bank.bankName, 
+	routingNumber: $.bank.routingNumber, 
+	},
+	loan: $.loan, 
+	parentLeads: $.parentLeads, 
+	role: $.role, 
+	createdAt: $.createdAt
+}
+---
+{
+	(accounts)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="## ACCOUNT LOGGER ID GET END" doc:id="6c7ea074-0c55-4ffa-93ed-7d7bf22677e7" message="##ACCOUNT LOGGER ID GET END"/>
+	</flow>
+	<flow name="TransactionGET" doc:id="74b644d2-d158-451c-8508-c24d9950858f" >
+		<jms:consume doc:name="Consume" doc:id="0fa182c4-710b-4c49-9887-b43fb2693199" config-ref="JMS_Config" destination="2generatedreport" ackMode="MANUAL"/>
+	</flow>
+	<flow name="TransactionJMS" doc:id="a4c681f5-ec1e-485c-b512-b7d1981309ff" >
+		<jms:listener doc:id="1c256f6d-d298-4af7-81c8-1e48ffb7088d" destination="2generatedreport" config-ref="JMS_Config" ackMode="MANUAL"/>
+		<set-variable value="#[attributes.ackId]" doc:name="ackToken" doc:id="0465cf0a-b34d-4fbf-a11f-719afbde3070" variableName="ackToken"/>
+		<ee:transform doc:name="Transform Message" doc:id="8ec55aa0-d9bb-431e-96d8-1673243d1031" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xlsx
+---
+	Sheet1: [{
+		transactionID:"transaction",
+		accountID: "ID",
+		accountType:"type",
+		accountNumber: "Number",
+		currency: "currency",
+		amount:"amount",
+		IBAN:"IBAN",
+		bankCode: "bankCode",
+		bankName: "bankNAme",
+		routingNumber: "routingNumber",
+		createdAt:"createdAt"
+	}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ftp:write doc:id="c6badd92-7646-45cf-a870-dcc598db2705" config-ref="FTP_Config" path="reports.xlsx"/>
+		<jms:ack doc:name="Ack" doc:id="22484499-e492-4478-a27f-fce35d7fd467" ackId="#[vars.ackToken]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="26a395c5-3028-44b2-bc95-0d51aa7ea1b8" />
+	</flow>
+</mule>

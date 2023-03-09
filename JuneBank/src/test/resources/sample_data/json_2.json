@@ -1,0 +1,37 @@
+{
+  "customerID": {
+    
+  },
+  "firstName": {
+    
+  },
+  "lastName": {
+    
+  },
+  "addressLine1": {
+    
+  },
+  "addressLine2": {
+    
+  },
+  "city": {
+    
+  },
+  "province": {
+    
+  },
+  "zipCode": {
+    
+  },
+  "country": {
+    
+  },
+  "phone": {
+    
+  },
+  "email": {
+    
+  },
+  "ssn": "955-18-8834",
+  "dateofBirth": null
+}

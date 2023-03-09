@@ -1,0 +1,11 @@
+%dw 2.0
+
+type auto_339a9e12_a0e6_41e5_9215_e81bdc273d89_Input_Payload = {
+  transactionType: String, 
+  completedAt?: String, 
+  postedAt: String, 
+  transactionName?: String, 
+  transactionID: String, 
+  _?: Any
+}
+

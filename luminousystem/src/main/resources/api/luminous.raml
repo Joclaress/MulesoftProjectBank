@@ -1,0 +1,24 @@
+#%RAML 1.0
+title: Luminous
+baseUri: http://localhost:8082/{version}
+version: v1
+
+types:
+  Transaction: !include datatypes/Transaction.raml
+
+
+/transactions:
+  post:
+    description: Create transaction
+    body:
+      application/json:
+        type: Transaction
+        example: !include example/TransactionExample.raml
+    responses:
+      201:
+        body:
+          application/json:
+            examples:
+              message: transaction Created
+          
+        

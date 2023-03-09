@@ -1,0 +1,229 @@
+#%RAML 1.0
+title: Final Project
+mediaType: application/json
+baseUri: http://localhost:8081/{version}
+version: v1
+
+
+documentation:
+  - !include documentation/acmeBankHeadline.raml
+  - !include documentation/acmeBankDoc.raml
+
+
+types:
+  Customer: !include /exchange_modules/a466cb8f-03d6-4897-bcbb-b3176c2cb61a/bankingdatatypes/1.0.0/datatypes/Customer.raml
+  Account: !include /exchange_modules/a466cb8f-03d6-4897-bcbb-b3176c2cb61a/bankingdatatypes/1.0.0/datatypes/Account.raml
+  Transaction: !include /exchange_modules/a466cb8f-03d6-4897-bcbb-b3176c2cb61a/bankingdatatypes/1.0.0/datatypes/Transaction.raml
+  Project: !include /exchange_modules/a466cb8f-03d6-4897-bcbb-b3176c2cb61a/bankingdatatypes/1.0.0/datatypes/Project.raml
+  CustomErrorMessage: !include datatypes/CustomErrorMessage.raml
+  
+traits:
+  cacheable: !include /exchange_modules/68ef9520-24e9-4cf2-b2f5-620025690913/training-cacheable-trait/1.0.1/Cacheable.raml
+
+resourceTypes:
+  collection: !include /resourceTypes/collection.raml
+  member: !include /resourceTypes/member.raml
+/customers:
+  description: Retreive list of customers
+  displayName: Get All customers
+  is:
+    - cacheable 
+  type: collection
+
+  post:
+    headers:
+      Accept?:
+    responses:
+      200:
+        headers:
+          Cache-Control:
+          Expires:
+            type: datetime
+        body:
+          application/json:
+            
+      404:
+        body:
+          type: CustomErrorMessage
+      406:
+        body:
+          type: CustomErrorMessage
+
+  patch:
+    headers:
+      Accept?:
+    responses:
+      200:
+        headers:
+          Cache-Control:
+          Expires:
+            type: datetime
+        body:
+          application/json:
+            type: Customer
+      404:
+        body:
+          type: CustomErrorMessage
+      406:
+        body:
+          type: CustomErrorMessage
+
+  get:
+    headers:  
+      Accept?:
+    responses: 
+      200:
+        headers: 
+          Cache-Control:
+          Expires:
+            type: datetime
+        body:
+          application/json:
+          application/xml:
+      404:
+        body:
+          type: CustomErrorMessage
+      406:
+        body:
+          type: CustomErrorMessage
+  /{customer_id}:
+    type: member
+    get:
+      headers:  
+        Accept?:
+      responses: 
+        200:
+          headers: 
+            Cache-Control:
+            Expires:
+              type: datetime
+          body:
+            application/json:
+              type: Customer
+            application/xml:
+              type: Customer
+     
+    patch:
+        headers:
+          Accept?:
+        responses:
+          200:
+            headers:
+              Cache-Control:
+              Expires:
+                type: datetime
+            body:
+              application/json:
+                type: Customer
+          404:
+            body:
+              type: CustomErrorMessage
+          406:
+            body:
+              type: CustomErrorMessage
+    delete:     
+        headers:
+          Accept?:
+        responses:
+          200:
+            headers:
+              Cache-Control:
+              Expires:
+                type: datetime
+            body:
+              application/json:
+                type: Customer
+/accounts:
+  type:
+    collection:
+  post:
+    headers:
+      Accept?:
+    responses:
+      200:
+        headers:
+          Cache-Control:
+          Expires:
+            type: datetime
+        body:
+          application/json:
+           
+      404:
+        body:
+          type: CustomErrorMessage
+      406:
+        body:
+          type: CustomErrorMessage
+  get:
+    headers:
+      Accept?:
+    responses:
+      200:
+        headers:
+          Cache-Control:
+          Expires:
+            type: datetime
+        body:
+          application/json:
+            type: Account []
+      404:
+        body:
+          type: CustomErrorMessage
+      406:
+        body:
+          type: CustomErrorMessage
+              
+  /{account_id}:
+    type:
+      member:
+    get:
+      body:
+        application/json:
+          type: Account []
+    put:
+    /transactions:
+      type:
+        collection:
+      get:
+        responses: 
+          200:
+            body:
+              type: Transaction
+          404:
+            body:
+              type: CustomErrorMessage
+          406:
+            body:
+              type: CustomErrorMessage
+/transactions:
+  type:
+    collection:
+  post:
+    responses:
+      200:
+        body:
+          type: Transaction
+      404:
+        body:
+          type: CustomErrorMessage
+      406:
+        body:
+          type: CustomErrorMessage
+  get:
+    responses:
+      200:
+        body:
+          type: Transaction
+      404:
+        body:
+          type: CustomErrorMessage
+      406:
+        body:
+          type: CustomErrorMessage
+  /{transaction_id}:
+    type:
+      member
+    get:
+      body:
+        application/json:
+          type: Transaction

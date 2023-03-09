@@ -1,0 +1,21 @@
+%dw 2.0
+
+type auto_349799ae_6f7c_42b9_8eea_c8e74c5f9578_Input_Payload = {|
+  customerID: String, 
+  firstName: String, 
+  lastName: String, 
+  displayName: String, 
+  address: {|
+    addressLine1: String, 
+    addressLine2: String, 
+    city: String, 
+    state: String, 
+    zipCode: String, 
+    country: String
+  |}, 
+  phone: String, 
+  email: String, 
+  ssn: String, 
+  dateOfBirth: String
+|}
+
